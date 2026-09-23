@@ -40,3 +40,22 @@ as a runner reliability follow-up before release; it was not a target reproducti
 and the fixture test correctly rejected it. No timeout was relaxed to pass it.
 
 These are corpus/runner checks. The three-arm model evaluation remains unexecuted.
+
+## Linux namespace execution
+
+Local Ubuntu/WSL2 validation used Linux 6.18.33.2, util-linux 2.41.3 and Node
+24.13.0. The Node archive's SHA-256 was checked against Node's published checksum
+list. Six namespace tests passed both as root and UID 65534: detached-child
+cleanup on normal exit, timeout/cancellation, owner SIGKILL, outer-supervisor
+SIGKILL, refused namespace startup, and exact arguments/UID/exit 125 preservation.
+
+The full Linux suite passed 69 tests with 7 platform-specific skips (90.4s).
+The Windows runner/supervisor/report regression slice passed 26 tests (168.6s).
+The original Linux baseline had 62 passes, 2 npm timeouts and 6 skips. An offline
+probe with a longer explicit timeout measured 38.2s for missing-lock npm startup;
+a valid locked package reproduced twice in 80.8s including both installations.
+The npm test recipes now explicitly allow 60 seconds per phase. Production
+defaults and the independent 20-second supervisor startup bound are unchanged.
+
+Hosted CI is configured for Node 22/24 on Ubuntu 22.04 and Windows; its results
+must be checked separately before claiming those combinations passed.

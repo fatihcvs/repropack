@@ -56,11 +56,21 @@ export async function runCommand(command, { cwd, env, timeoutMs, signal, maxOutp
     await fs.writeFile(specification, JSON.stringify({ executable: resolved[0], arguments: resolved.slice(1), cwd, statusPath: path.join(supervision, 'status.json'), parentPid: process.pid }));
     invocation = [path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe'),
       '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', fileURLToPath(new URL('./windows-job.ps1', import.meta.url)), '-Specification', specification];
+  } else if (process.platform === 'linux') {
+    supervision = await fs.mkdtemp(path.join(env?.TMPDIR || os.tmpdir(), 'repropack-supervisor-'));
+    const specification = path.join(supervision, 'spec.json');
+    await fs.writeFile(specification, JSON.stringify({ executable: resolved[0], arguments: resolved.slice(1), cwd, statusPath: path.join(supervision, 'status.json') }));
+    invocation = ['unshare', '--user', `--map-user=${process.getuid()}`, `--map-group=${process.getgid()}`, '--pid', '--fork', '--mount-proc', '--kill-child=SIGKILL', '--',
+      process.execPath, fileURLToPath(new URL('./linux-supervisor.js', import.meta.url)), specification];
   }
   try {
   return await new Promise((resolve, reject) => {
     const child = spawn(invocation[0], invocation.slice(1), { cwd, env, shell: false, windowsHide: true,
-      detached: process.platform !== 'win32', stdio: ['ignore', 'pipe', 'pipe'] });
+      detached: process.platform !== 'win32', stdio: [process.platform === 'linux' ? 'pipe' : 'ignore', 'pipe', 'pipe'] });
+    if (process.platform === 'linux') {
+      child.stdin.on('error', () => { /* Launch failure is reported by error/close below. */ });
+      child.stdin.write('start\n');
+    }
     const output = { stdout: [], stderr: [] };
     let bytes = 0;
     let stopped;

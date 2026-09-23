@@ -68,7 +68,7 @@ test('setup and unsupported boundaries survive the real package runner', async t
     const root = await materialize(id, path.join(base, id));
     const output = path.join(root, 'artifacts', 'package');
     await createPackage({ root: path.join(root, 'source'), output, files: Object.keys(item.files),
-      command: item.command, setup: item.setup, signature: item.signature, exitCode: item.exitCode });
+      command: item.command, setup: item.setup, signature: item.signature, exitCode: item.exitCode, timeoutMs: item.timeoutMs });
     const result = await reproduce(output, { allowExecution: true });
     assert.equal(result.status, item.expectedBoundary, JSON.stringify(result));
     assert.ok(result.attempts.every(attempt => !attempt.target));

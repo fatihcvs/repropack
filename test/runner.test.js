@@ -91,14 +91,16 @@ test('installs a dependency-free locked npm package and reproduces npm test', as
   await fs.writeFile(path.join(f.root, 'package-lock.json'), JSON.stringify({ name: 'synthetic-repro', version: '1.0.0', lockfileVersion: 3, packages: { '': { name: 'synthetic-repro', version: '1.0.0' } } }));
   const output = path.join(path.dirname(f.output), 'npm-package');
   await createPackage({ root: f.root, output, files: ['bug.cjs', 'package.json', 'package-lock.json'],
-    setup: ['npm', 'ci', '--ignore-scripts', '--offline', '--no-audit', '--no-fund'], command: ['npm', 'test'], signature: 'KNOWN_FAILURE' });
+    setup: ['npm', 'ci', '--ignore-scripts', '--offline', '--no-audit', '--no-fund'], command: ['npm', 'test'], signature: 'KNOWN_FAILURE', timeoutMs: 60000 });
   const result = await reproduce(output, f.options);
   assert.equal(result.status, 'reproduced');
   assert.ok(result.attempts.every(a => a.setup.exitCode === 0 && a.target.exitCode === 1));
   assert.deepEqual(await fs.readdir(f.temporaryRoot), []);
 });
 
-test('timeout terminates an attached child process', async t => {
+// Linux namespace PIDs differ from host PIDs; linux-supervisor.test.js checks
+// actual host process disappearance for timeout/cancellation and detached trees.
+test('timeout terminates an attached child process', { skip: process.platform === 'linux' }, async t => {
   const f = await fixture(t, "const {spawn}=require('child_process');const child=spawn(process.execPath,['-e','setInterval(()=>{},100)'],{stdio:'inherit'});console.log(child.pid);setInterval(()=>{},100)", { timeoutMs: 1500 });
   const result = await reproduce(f.output, f.options);
   assert.equal(result.status, 'timed_out');

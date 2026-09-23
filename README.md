@@ -5,7 +5,8 @@ file capture, integrity verification and local repeated execution are implemente
 A draft Claude Code skill is included; behavioral validation and release evaluation
 are pending. A packaged artifact is not a reproduced bug.
 
-Requires Node.js 22 or later. No runtime dependencies.
+Requires Node.js 22 or later. No npm runtime dependencies. Linux execution also
+requires util-linux `unshare` and permission to create user/PID/mount namespaces.
 
 ```sh
 node src/cli.js create recipe.json
@@ -64,7 +65,7 @@ of the selected inventory and are not covered by this command.
 ## Development status
 
 - Implemented: explicit capture, portable path checks, digests, limits, manifest, integrity verification and two-run local execution.
-- Pending: stronger process containment, skill behavioral validation,
+- Pending: platform CI, Windows startup reliability follow-up, skill behavioral validation,
   comparative evaluations, CI and first release.
 
 This project is separate from Backup Coverage.
@@ -115,13 +116,32 @@ has a separate 20-second bound; the recipe timeout starts when the supervisor
 is ready. A status record distinguishes target exit codes (including 125) from
 supervisor launch failures. Startup adds several seconds per phase.
 
-On POSIX, timeout/cancellation currently uses a process group; detached processes
-are not yet reliably contained there. Neither implementation is a security
-sandbox or protection against out-of-job brokers. The Windows supervisor holds
+On Linux, each phase starts `src/linux-supervisor.js` as PID 1 in a fresh PID
+namespace through `unshare`. The caller's UID/GID are mapped to themselves. The
+kernel terminates namespace descendants when PID 1 exits, including children
+that created separate process groups. An open pipe from the runner acts as a
+lifetime signal: owner death closes it and exits the namespace supervisor.
+`unshare --kill-child` covers forcible termination of the outer supervisor.
+Startup has the same separate 20-second bound and status protocol as Windows.
+If namespaces are unavailable, execution fails before the target starts; there
+is no uncontained Linux fallback. See the Linux
+[PID namespace](https://man7.org/linux/man-pages/man7/pid_namespaces.7.html) and
+[unshare](https://man7.org/linux/man-pages/man1/unshare.1.html) documentation.
+
+This changes visible process IDs and `/proc`, which may affect PID-sensitive
+reproductions. It does not isolate the network or provide a restricted filesystem.
+Neither implementation is a security sandbox or protection against out-of-job
+brokers. The Windows supervisor holds
 a handle to its owning ReproPack process and exits if that process dies, which
 also closes the job and terminates its descendants. Temporary files are removed on normal completion and handled
-cancellation, but forceful parent termination can leave files. Only Windows
-execution has been tested. See Microsoft's [Job Object lifecycle documentation](https://learn.microsoft.com/en-us/windows/win32/procthread/job-objects).
+cancellation, but forceful parent termination can leave files. Windows and Ubuntu
+on WSL2 have local execution evidence; hosted Linux CI is pending. macOS and other
+POSIX platforms still use the earlier process-group path and have no detached-child
+containment guarantee or release validation. See Microsoft's [Job Object lifecycle documentation](https://learn.microsoft.com/en-us/windows/win32/procthread/job-objects).
+
+Allow realistic setup time in recipes: local npm initialization on a WSL-mounted
+Windows drive took 38 seconds in one offline probe. The npm integration fixtures
+use a 60-second phase timeout; ordinary recipe defaults remain 10 seconds.
 
 ## Shareable report
 

@@ -48,6 +48,11 @@ API tokens, NODE_OPTIONS or app-specific flags. Each attempt installs into its
 own project/home/cache directories. A failure that needs a credential or service
 is not automatically reproducible there; do not copy credentials to make it work.
 
-Windows Job Object supervision has lifecycle tests, but it is not a security
-sandbox. POSIX detached-process containment and cross-platform validation remain
-release work. Do not advertise an untested OS as supported.
+Windows Job Object and Linux PID namespace supervision have local lifecycle
+tests, but they are not security sandboxes. Linux needs util-linux `unshare` and
+permission to create user/PID/mount namespaces; denial is a startup failure, not
+the target bug. Linux changes visible PIDs and `/proc`. Hosted CI and other POSIX
+systems remain unverified. Do not advertise an untested OS as supported.
+
+Choose a realistic setup timeout. npm startup can exceed the default 10 seconds
+on WSL-mounted drives; the included npm fixtures allow 60 seconds per phase.

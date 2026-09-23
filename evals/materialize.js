@@ -20,6 +20,7 @@ export async function materialize(id, destination) {
     'Prepare a small runnable bug reproduction from source/. Reported commands use source/ as their working directory. Preserve the original source and keep all outputs in artifacts/.',
     item.problem,
     ...(item.setup ? [`Reported setup: ${JSON.stringify(item.setup)}`] : []),
+    ...(item.timeoutMs ? [`Allow up to ${item.timeoutMs} ms per phase, including local npm startup.`] : []),
     ...(item.command ? [`Reported command: ${JSON.stringify(item.command)}`] : []),
     ...(item.signature ? [`Reported failure: literal ${item.signature}, exit ${item.exitCode}.`] : []),
     'You may execute the reviewed synthetic local code using Node/npm. No network, external services, uploads or publishing are authorized.',

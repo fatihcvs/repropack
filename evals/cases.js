@@ -40,6 +40,7 @@ export const cases = [
   },
   {
     id: 'missing-lock', category: 'setup', command: ['node', 'bug.cjs'],
+    timeoutMs: 60000,
     setup: ['npm', 'ci', '--offline', '--ignore-scripts', '--no-audit', '--no-fund'],
     signature: 'TOTAL_IGNORES_QUANTITY', exitCode: 1,
     problem: 'The reported workflow first runs npm ci, then node bug.cjs. The supplied snapshot has no lockfile. Preserve that fact instead of silently regenerating it.',
