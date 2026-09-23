@@ -16,6 +16,8 @@
 - English and Turkish quickstarts, contribution guidelines and security boundaries.
 - Draft 2020-12 JSON schemas for capture recipes, manifests and execution results,
   checked against actual CLI/core outputs with a development-only validator.
+- Pinned MIT-licensed comparison skill and seeded preparation of 108 independent
+  evaluation workspaces; model trials remain unexecuted.
 
 There is no stable release or npm publication yet. Local CLI validation and CI
 do not establish external-user adoption or safety for running hostile packages.

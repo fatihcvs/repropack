@@ -1,0 +1,21 @@
+{
+  "executed": false,
+  "repository": "https://github.com/github/awesome-copilot",
+  "files": [
+    {
+      "upstreamPath": "skills/bug-reproduction-brief/SKILL.md",
+      "gitBlob": "add9ca292293ef860cb4cab05063b922c49d3c1f",
+      "sha256": "522ad2948c498f6dcee6d48773387058d2cba3c45ba9e093ed35210601d141b6",
+      "path": "SKILL.md"
+    },
+    {
+      "upstreamPath": "LICENSE",
+      "gitBlob": "89bc5e962c9944cdb050887062afdaaf89be504a",
+      "sha256": "e32449d23085399adc1222f7a17408b730550258e51627c153cb108ca9955823",
+      "path": "LICENSE"
+    }
+  ],
+  "license": "MIT",
+  "commit": "d7e4ad98ed8fd72e4744ee604e6277eb36748fe2",
+  "inspectedAt": "2026-09-23"
+}
