@@ -26,3 +26,4 @@ jobs:
           node-version: ${{ matrix.node }}
       - run: npm ci --ignore-scripts
       - run: node --test
+      - run: npm run verify:package

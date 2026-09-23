@@ -12,7 +12,8 @@
     "repropack": "src/cli.js"
   },
   "scripts": {
-    "test": "node --test"
+    "test": "node --test",
+    "verify:package": "node scripts/verify-package.js"
   },
   "devDependencies": {
     "ajv": "^8.20.0"

@@ -7,6 +7,15 @@ user/PID/mount namespace permissions; Windows tests use Windows PowerShell/.NET.
 Platform-specific tests skip on the other OS. Tests use disposable synthetic
 projects; do not point fixtures at personal or production data.
 
+Run `npm run verify:package` after changing distributed files or CLI behavior.
+It packs the checkout, installs that tarball offline into an empty temporary
+consumer with scripts and dev dependencies disabled, checks installed runtime,
+skill/reference/schema/example bytes, then runs create/verify/run/report through
+the installed CLI. Its fixture deliberately fails; two matching attempts are
+required. Temporary files are removed afterward. This runs reviewed synthetic
+code locally and requires the same OS facilities as the execution tests.
+It verifies a local tarball, not a public release download or Claude invocation.
+
 Keep changes focused and explain the observed problem, resulting behavior and
 validation in your pull request. Include a regression for changes to capture,
 verification, execution or reporting that could misclassify a failure, lose

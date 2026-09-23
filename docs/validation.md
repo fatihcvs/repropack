@@ -101,3 +101,19 @@ demonstrating the boundary between these checks.
 CI now installs the locked development dependencies with `npm ci --ignore-scripts`
 before testing. Runtime CLI commands remain dependency-free. This change also
 corrects the report's outdated claim that Linux lifecycle testing was pending.
+
+## Repeatable installation check
+
+`npm run verify:package` now exercises a real local tarball installation rather
+than relying on checkout imports. It uses an empty consumer and a fresh npm
+cache, with offline installation, scripts disabled and dev dependencies omitted.
+The installed executable entry and command shim must exist, Ajv must be absent,
+and 17 runtime/helper/skill/reference/schema/example files must match checkout
+bytes. The installed CLI must create, verify, run twice and render a report for
+the assertion fixture while preserving its source. Temporary files are removed.
+
+The CLI entry uses LF line endings on all platforms so npm's shebang repair does
+not change its installed bytes. The check passed locally on Windows Node24.13.0
+and is part of each hosted Node22/24 Windows/Ubuntu test job. Consult the run for
+the relevant commit before claiming a particular matrix passed. This remains a
+local development tarball check, not public-download or Claude behavior evidence.

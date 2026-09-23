@@ -24,6 +24,8 @@
   expectations, fresh attempts and before/after inventories; scoring stays manual.
 - Evaluation-ledger summaries with separate arm/category denominators, explicit
   unrun/infrastructure/pending counts and no automatic evidence or release approval.
+- An offline tarball-install check in every CI matrix job, including installed
+  CLI execution and bundled skill references, schemas and example bytes.
 
 There is no stable release or npm publication yet. Local CLI validation and CI
 do not establish external-user adoption or safety for running hostile packages.
