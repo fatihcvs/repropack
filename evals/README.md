@@ -139,3 +139,49 @@ execute candidate commands, decide whether a transformation preserves the bug,
 verify a reproduction claim, or infer success from an empty/clean directory.
 Perform the separate fresh-directory replay and transformation review described
 above before recording trial outcomes. Prepared but unrun trials remain unrun.
+
+## Replay reviewed artifacts
+
+An evaluator can replay plain files from **any** arm using a small, separately
+authored review JSON. Review all selected code, dependencies and commands first;
+do not copy a candidate's instructions into this file without inspecting them.
+For an artifact at `artifacts/example/bug.cjs`, a review could be:
+
+```json
+{"files":["example/bug.cjs"],"cwd":"example","command":["node","bug.cjs"]}
+```
+
+```sh
+node evals/replay.js quantity /absolute/trial /outside-trial/review.json --allow-execution > /outside-trial/replay.json
+```
+
+Allowed review fields are `files`, `command`, optional `setup`, `cwd` and
+`timeoutMs`. File paths are relative to `artifacts/`, and commands run relative
+to `cwd` (default `.`). The expected signature and exit code come from the pinned
+corpus, never from a candidate's manifest or evaluator override. Use the same
+command mapping/review rules for all three arms. The evaluator's internal capture
+format is not a required candidate output format.
+
+Replay requires complete inspection, unchanged original source and nonempty
+artifacts without known markers or opaque files. It snapshots the reviewed files,
+checks their hashes against inspection, then uses the normal runner for up to two
+fresh-directory attempts. Temporary files are removed even on errors or
+cancellation. The temporary root must be outside the trial. Source and artifact
+inventories are checked again afterward; changed workspaces are flagged. Keep
+the trial stable during inspection/capture: these checks are not atomic.
+
+Execution is local, **not a filesystem or network sandbox**. Use only reviewed
+synthetic offline code here; shared-host files and services remain accessible.
+Known markers emitted in runtime output are flagged by numeric ID and redacted
+from returned evidence. Other secrets and encodings are not detected. Keep logs
+local and review them before sharing. Unsupported cases require manual boundary
+review and are refused by this replay tool.
+
+Exit 0 means replay evidence was collected with unchanged inventories, **not**
+that a bug reproduced or a trial passed. Exit 1 flags changed inventories; exit 2
+means invalid input, failed preconditions or an operational error. Inspect
+`replay.status`, attempts and `runtimeMarkerHits`. A matching signature can be
+manufactured, so `outcome` remains `not_scored`: semantic equivalence, preserved
+setup constraints, intermittent behavior, sanitization disclosure and false
+claims still require independent review. Replaying a hand-authored fixture is
+not evidence of a Claude invocation or a completed comparison trial.

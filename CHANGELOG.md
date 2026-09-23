@@ -20,6 +20,8 @@
   evaluation workspaces; model trials remain unexecuted.
 - Bounded, nonexecuting evaluation-file inspection for source preservation,
   artifact inventories and known synthetic secret markers; replay/scoring stays separate.
+- Opt-in replay of reviewed plain artifacts from any evaluation arm, with corpus
+  expectations, fresh attempts and before/after inventories; scoring stays manual.
 
 There is no stable release or npm publication yet. Local CLI validation and CI
 do not establish external-user adoption or safety for running hostile packages.
