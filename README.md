@@ -100,22 +100,21 @@ machine, not its root cause or portability to another OS. CLI exit codes are
 0 for reproduced, 1 for other execution outcomes, and 2 for invalid input or
 operational errors.
 
-Timeout/cancellation stops the attached process tree using taskkill on Windows
-or a process group on POSIX. Detached descendants or children that outlive an
-already-exited parent are not reliably contained in this preview. Do not use
-daemonizing recipes. Stronger lifecycle containment is a remaining release gate.
-Temporary files are removed on normal completion/error/cancellation; forcefully
-killing ReproPack itself can leave files. Only Windows execution has been tested.
+On Windows, each phase runs under `src/windows-job.ps1`, which creates a
+Job Object before starting the target. Ordinary descendants, including detached
+children, are terminated when the target finishes or the supervisor is stopped.
+The supervisor uses Windows PowerShell/.NET and runtime C# compilation. Startup
+has a separate 20-second bound; the recipe timeout starts when the supervisor
+is ready. A status record distinguishes target exit codes (including 125) from
+supervisor launch failures. Startup adds several seconds per phase.
 
-An experimental Windows Job Object supervisor is in `src/windows-job.ps1`.
-Its standalone tests cover exact argument/exit-code propagation, early parent
-exit with a detached child, and forced supervisor termination. It follows the
-[Windows Job Object lifecycle](https://learn.microsoft.com/en-us/windows/win32/procthread/job-objects)
-and joins the job before launching the target. It is **not yet connected to
-`run`**: startup/target timing, launch-error reporting and CLI integration remain
-required before the existing process-cleanup limitation can be removed.
-The supervisor uses Windows PowerShell/.NET and runtime C# compilation; it does
-not provide a security boundary against hostile code or out-of-job brokers.
+On POSIX, timeout/cancellation currently uses a process group; detached processes
+are not yet reliably contained there. Neither implementation is a security
+sandbox or protection against out-of-job brokers. The parent ReproPack process
+being forcibly killed still needs an explicit supervisor watchdog; this remains
+a release gate. Temporary files are removed on normal completion and handled
+cancellation, but forceful parent termination can leave files. Only Windows
+execution has been tested. See Microsoft's [Job Object lifecycle documentation](https://learn.microsoft.com/en-us/windows/win32/procthread/job-objects).
 
 ## Shareable report
 

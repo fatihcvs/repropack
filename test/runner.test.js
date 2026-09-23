@@ -116,3 +116,19 @@ test('mixed outcomes are intermittent rather than reproduced', async t => {
   await createPackage({ root: f.root, output, files: ['bug.cjs'], command: ['node', 'bug.cjs'], signature: 'KNOWN_FAILURE' });
   assert.equal((await reproduce(output, f.options)).status, 'intermittent');
 });
+
+test('Windows runner cleans detached children after each successful target exit', { skip: process.platform !== 'win32' }, async t => {
+  const f = await fixture(t, "const p=require('child_process').spawn(process.execPath,['-e','setInterval(()=>{},100)'],{detached:true,stdio:'ignore'});console.log(p.pid);p.unref();console.error('KNOWN_FAILURE');process.exitCode=1;");
+  const result = await reproduce(f.output, f.options);
+  assert.equal(result.status, 'reproduced');
+  for (const attempt of result.attempts) {
+    const pid = Number(attempt.target.stdout.trim());
+    assert.ok(Number.isInteger(pid) && pid > 0);
+    assert.throws(() => process.kill(pid, 0), { code: 'ESRCH' });
+  }
+});
+
+test('target exit 125 is not confused with a supervisor launch failure', async t => {
+  const f = await fixture(t, "console.error('KNOWN_FAILURE');process.exitCode=125", { exitCode: 125 });
+  assert.equal((await reproduce(f.output, f.options)).status, 'reproduced');
+});

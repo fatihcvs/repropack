@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 import { spawn } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { verifyPackage } from './verify.js';
 
 async function resolveCommand(command) {
@@ -47,8 +48,18 @@ async function terminateTree(child) {
 export async function runCommand(command, { cwd, env, timeoutMs, signal, maxOutputBytes = 1024 * 1024 }) {
   if (signal?.aborted) return { status: 'cancelled', exitCode: null, stdout: '', stderr: '' };
   const resolved = await resolveCommand(command);
-  return new Promise((resolve, reject) => {
-    const child = spawn(resolved[0], resolved.slice(1), { cwd, env, shell: false, windowsHide: true,
+  let supervision;
+  let invocation = resolved;
+  if (process.platform === 'win32') {
+    supervision = await fs.mkdtemp(path.join(env?.TEMP || os.tmpdir(), 'repropack-supervisor-'));
+    const specification = path.join(supervision, 'spec.json');
+    await fs.writeFile(specification, JSON.stringify({ executable: resolved[0], arguments: resolved.slice(1), cwd, statusPath: path.join(supervision, 'status.json') }));
+    invocation = [path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe'),
+      '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', fileURLToPath(new URL('./windows-job.ps1', import.meta.url)), '-Specification', specification];
+  }
+  try {
+  return await new Promise((resolve, reject) => {
+    const child = spawn(invocation[0], invocation.slice(1), { cwd, env, shell: false, windowsHide: true,
       detached: process.platform !== 'win32', stdio: ['ignore', 'pipe', 'pipe'] });
     const output = { stdout: [], stderr: [] };
     let bytes = 0;
@@ -60,7 +71,23 @@ export async function runCommand(command, { cwd, env, timeoutMs, signal, maxOutp
       stopped = reason;
       termination = terminateTree(child).catch(error => { cleanupError = error; child.kill(); });
     }
-    const timer = setTimeout(() => stop('timed_out'), timeoutMs);
+    let timer = setTimeout(() => stop(supervision ? 'startup_failed' : 'timed_out'), supervision ? 20000 : timeoutMs);
+    let ready = !supervision;
+    let finished = false;
+    let readingStatus = false;
+    const poll = supervision ? setInterval(async () => {
+      if (ready || readingStatus || stopped) return;
+      readingStatus = true;
+      try {
+        const status = JSON.parse(await fs.readFile(path.join(supervision, 'status.json'), 'utf8'));
+        if (!finished && !stopped && (status.state === 'ready' || status.state === 'exited')) {
+          ready = true;
+          clearTimeout(timer);
+          timer = setTimeout(() => stop('timed_out'), timeoutMs);
+        }
+      } catch { /* The helper has not published a complete status yet. */ }
+      finally { readingStatus = false; }
+    }, 20) : undefined;
     const abort = () => stop('cancelled');
     signal?.addEventListener('abort', abort, { once: true });
     if (signal?.aborted) abort();
@@ -75,15 +102,26 @@ export async function runCommand(command, { cwd, env, timeoutMs, signal, maxOutp
     let spawnError;
     child.once('error', error => { spawnError = error.code || 'spawn_error'; });
     child.once('close', async (exitCode, exitSignal) => {
+      finished = true;
       clearTimeout(timer);
+      clearInterval(poll);
       signal?.removeEventListener('abort', abort);
       await termination;
       if (cleanupError) { reject(cleanupError); return; }
+      if (supervision && !stopped && !spawnError) {
+        try {
+          const status = JSON.parse(await fs.readFile(path.join(supervision, 'status.json'), 'utf8'));
+          if (status.state !== 'exited' || status.exitCode !== exitCode) spawnError = 'supervisor_failed';
+        } catch { spawnError = 'supervisor_failed'; }
+      }
       resolve({ status: stopped || (spawnError ? 'spawn_failed' : 'exited'), exitCode, signal: exitSignal,
         ...(spawnError ? { error: spawnError } : {}),
         stdout: Buffer.concat(output.stdout).toString('utf8'), stderr: Buffer.concat(output.stderr).toString('utf8') });
     });
   });
+  } finally {
+    if (supervision) await fs.rm(supervision, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
+  }
 }
 
 export async function reproduce(directory, { allowExecution = false, signal, temporaryRoot = os.tmpdir() } = {}) {

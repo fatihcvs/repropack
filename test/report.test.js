@@ -47,7 +47,7 @@ test('actual CLI create, verify, run and report preserve evidence and mask outpu
   const output = path.join(base, 'package');
   await fs.writeFile(recipeFile, JSON.stringify({ root: source, output, files: ['bug.cjs'], command: ['node', 'bug.cjs'], signature: 'FAIL' }));
   const cli = fileURLToPath(new URL('../src/cli.js', import.meta.url));
-  const invoke = args => spawnSync(process.execPath, [cli, ...args], { encoding: 'utf8', timeout: 15000 });
+  const invoke = args => spawnSync(process.execPath, [cli, ...args], { encoding: 'utf8', timeout: 65000 });
   for (const args of [['create', recipeFile], ['verify', output]]) {
     const call = invoke(args);
     assert.equal(call.status, 0, call.stderr);

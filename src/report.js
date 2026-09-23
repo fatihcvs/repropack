@@ -1,4 +1,4 @@
-const statuses = new Set(['reproduced', 'not_reproduced', 'intermittent', 'setup_failed', 'timed_out', 'cancelled', 'output_limit', 'spawn_failed', 'unsupported']);
+const statuses = new Set(['reproduced', 'not_reproduced', 'intermittent', 'setup_failed', 'timed_out', 'cancelled', 'output_limit', 'spawn_failed', 'startup_failed', 'unsupported']);
 
 function fence(text) {
   let length = 3;

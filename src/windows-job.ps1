@@ -69,7 +69,7 @@ public static class ReproPackJob {
         return output.Append('"').ToString();
     }
 
-    public static void Run(string executable, string[] arguments, string directory) {
+    public static void Run(string executable, string[] arguments, string directory, string statusPath) {
         IntPtr job = CreateJobObject(IntPtr.Zero, null);
         if (job == IntPtr.Zero) throw new System.ComponentModel.Win32Exception();
         var limits = new ExtendedLimits();
@@ -86,6 +86,7 @@ public static class ReproPackJob {
         // Environment.Exit preserves the target status while process teardown
         // closes the last job handle and terminates remaining descendants.
         try {
+            if (!String.IsNullOrEmpty(statusPath)) System.IO.File.WriteAllText(statusPath, "{\"state\":\"ready\"}");
             var quoted = new string[arguments.Length];
             for (int i = 0; i < arguments.Length; i++) quoted[i] = Quote(arguments[i]);
             var startup = new StartupInfo();
@@ -105,6 +106,7 @@ public static class ReproPackJob {
             uint exitCode;
             if (!GetExitCodeProcess(target.Process, out exitCode)) throw new System.ComponentModel.Win32Exception();
             CloseHandle(target.Process);
+            if (!String.IsNullOrEmpty(statusPath)) System.IO.File.WriteAllText(statusPath, "{\"state\":\"exited\",\"exitCode\":" + exitCode.ToString(System.Globalization.CultureInfo.InvariantCulture) + "}");
             Environment.Exit(unchecked((int)exitCode));
         } catch {
             Console.Error.WriteLine("ReproPack Windows job launch failed.");
@@ -115,4 +117,4 @@ public static class ReproPackJob {
 '@
 
 $spec = Get-Content -LiteralPath $Specification -Raw -Encoding UTF8 | ConvertFrom-Json
-[ReproPackJob]::Run([string]$spec.executable, [string[]]$spec.arguments, [string]$spec.cwd)
+[ReproPackJob]::Run([string]$spec.executable, [string[]]$spec.arguments, [string]$spec.cwd, [string]$spec.statusPath)
