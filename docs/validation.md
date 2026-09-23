@@ -66,5 +66,23 @@ execution through the filtered target environment consistently timed out during
 helper initialization. The follow-up separates the trusted helper's host
 environment from the target's explicit Unicode CreateProcess environment block.
 Local helper/report tests passed 11 cases, including non-inheritance of a private
-helper variable and preservation of Unicode and empty values. Hosted verification
-of this follow-up is still required; no startup timeout was increased.
+helper variable and preservation of Unicode and empty values. No startup timeout
+was increased.
+
+The follow-up commit `8d6ccb915f934e8191432a92a9be251b14b27668` passed all four
+hosted jobs: Ubuntu 22.04 with Node 22/24 and Windows with Node 22/24.
+[GitHub Actions run 35892089052](https://github.com/fatihcvs/repropack/actions/runs/35892089052)
+records the completed results. This resolves the hosted startup failure; it does
+not validate Claude skill behavior or macOS execution.
+
+## Packaged quickstart
+
+The English and Turkish quickstarts use the same recipe. A fresh development
+tarball containing the helper environment fix was installed offline into an
+empty prefix with installation scripts disabled. From the installed package,
+the documented create/verify/run/report commands passed on Windows with Node
+24.13.0, including the BOM-free UTF-8 output instructions for Windows PowerShell.
+Both attempts matched exit 1 and `TOTAL_IGNORES_QUANTITY`; report rendering passed.
+The package included the fixture, CLI, supervisors, skill references and new docs.
+This is a local tarball installation, not public release download verification
+or a real Claude session. No source behavior changed in this documentation slice.

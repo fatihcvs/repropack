@@ -8,6 +8,11 @@ are pending. A packaged artifact is not a reproduced bug.
 Requires Node.js 22 or later. No npm runtime dependencies. Linux execution also
 requires util-linux `unshare` and permission to create user/PID/mount namespaces.
 
+Start with the [offline example](docs/quickstart.md) or the
+[Türkçe başlangıç rehberi](docs/quickstart-tr.md). See
+[contribution guidelines](CONTRIBUTING.md), [security boundaries](SECURITY.md)
+and the [changelog](CHANGELOG.md).
+
 ```sh
 node src/cli.js create recipe.json
 node src/cli.js verify ../bug-package
@@ -65,8 +70,9 @@ of the selected inventory and are not covered by this command.
 ## Development status
 
 - Implemented: explicit capture, portable path checks, digests, limits, manifest, integrity verification and two-run local execution.
-- Pending: platform CI, Windows startup reliability follow-up, skill behavioral validation,
-  comparative evaluations, CI and first release.
+- Verified: Node 22/24 CI on Ubuntu 22.04 and Windows, including the Windows
+  helper environment fix. See [validation evidence](docs/validation.md).
+- Pending: skill behavioral validation, comparative evaluations and first release.
 
 This project is separate from Backup Coverage.
 
@@ -141,7 +147,7 @@ brokers. The Windows supervisor holds
 a handle to its owning ReproPack process and exits if that process dies, which
 also closes the job and terminates its descendants. Temporary files are removed on normal completion and handled
 cancellation, but forceful parent termination can leave files. Windows and Ubuntu
-on WSL2 have local execution evidence; hosted Linux CI is pending. macOS and other
+on WSL2 have local execution evidence, and hosted Ubuntu/Windows CI passes. macOS and other
 POSIX platforms still use the earlier process-group path and have no detached-child
 containment guarantee or release validation. See Microsoft's [Job Object lifecycle documentation](https://learn.microsoft.com/en-us/windows/win32/procthread/job-objects).
 
