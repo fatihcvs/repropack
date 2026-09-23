@@ -18,11 +18,11 @@ export function relativePath(value) {
   return parts;
 }
 
-function excluded(parts) {
+export function excluded(parts) {
   return parts.some(p => /^(\.git|node_modules|\.ssh|\.aws|\.config|\.npmrc|\.netrc|credentials|\.env(?:\..*)?|id_rsa|id_ed25519)$/i.test(p) || /\.(pem|key|p12|pfx|log)$/i.test(p));
 }
 
-async function regularFile(root, parts) {
+export async function regularFile(root, parts) {
   let current = root;
   for (let i = 0; i < parts.length; i++) {
     current = path.join(current, parts[i]);
@@ -40,6 +40,7 @@ export async function createPackage({ root, output, files, command, signature, e
   if (!Number.isInteger(exitCode) || exitCode < 1 || exitCode > 255) throw new Error('Expected exit code must be 1..255');
   if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 300000) throw new Error('Timeout must be 1..300000 ms');
   for (const limit of [maxFileBytes, maxTotalBytes]) if (!Number.isSafeInteger(limit) || limit < 1) throw new Error('Invalid size limit');
+  if (maxFileBytes > 5 * 1024 * 1024 || maxTotalBytes > 20 * 1024 * 1024) throw new Error('Size limits may only be lowered');
   if (cwd !== '.') relativePath(cwd);
   root = await fs.realpath(root);
   const destination = path.resolve(output);
