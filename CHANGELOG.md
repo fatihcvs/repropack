@@ -18,6 +18,8 @@
   checked against actual CLI/core outputs with a development-only validator.
 - Pinned MIT-licensed comparison skill and seeded preparation of 108 independent
   evaluation workspaces; model trials remain unexecuted.
+- Bounded, nonexecuting evaluation-file inspection for source preservation,
+  artifact inventories and known synthetic secret markers; replay/scoring stays separate.
 
 There is no stable release or npm publication yet. Local CLI validation and CI
 do not establish external-user adoption or safety for running hostile packages.
