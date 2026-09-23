@@ -59,3 +59,12 @@ defaults and the independent 20-second supervisor startup bound are unchanged.
 
 Hosted CI is configured for Node 22/24 on Ubuntu 22.04 and Windows; its results
 must be checked separately before claiming those combinations passed.
+
+The first hosted run (35891030255, commit 21e1ed0) passed both Linux jobs but
+failed 15 tests in each Windows job. Standalone Windows supervisors passed;
+execution through the filtered target environment consistently timed out during
+helper initialization. The follow-up separates the trusted helper's host
+environment from the target's explicit Unicode CreateProcess environment block.
+Local helper/report tests passed 11 cases, including non-inheritance of a private
+helper variable and preservation of Unicode and empty values. Hosted verification
+of this follow-up is still required; no startup timeout was increased.

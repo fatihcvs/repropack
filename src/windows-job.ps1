@@ -69,7 +69,7 @@ public static class ReproPackJob {
         return output.Append('"').ToString();
     }
 
-    public static void Run(string executable, string[] arguments, string directory, string statusPath, int parentPid) {
+    public static void Run(string executable, string[] arguments, string directory, string statusPath, int parentPid, string[] environment) {
         // Retain a process handle before launching the target. Monitoring this
         // handle avoids confusing a later reused PID with the original parent.
         Process parent = parentPid > 0 ? Process.GetProcessById(parentPid) : null;
@@ -112,7 +112,18 @@ public static class ReproPackJob {
             SetHandleInformation(startup.Error, 1, 1);
             ProcessInfo target;
             var command = new StringBuilder(Quote(executable) + " " + string.Join(" ", quoted));
-            if (!CreateProcess(executable, command, IntPtr.Zero, IntPtr.Zero, true, 0x08000000, IntPtr.Zero, directory, ref startup, out target)) throw new System.ComponentModel.Win32Exception();
+            IntPtr environmentBlock = IntPtr.Zero;
+            try {
+                if (environment != null) {
+                    Array.Sort(environment, StringComparer.OrdinalIgnoreCase);
+                    environmentBlock = Marshal.StringToHGlobalUni(string.Join("\0", environment) + "\0\0");
+                }
+                // CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT. A supplied
+                // block replaces the helper's environment rather than merging it.
+                if (!CreateProcess(executable, command, IntPtr.Zero, IntPtr.Zero, true, 0x08000400, environmentBlock, directory, ref startup, out target)) throw new System.ComponentModel.Win32Exception();
+            } finally {
+                if (environmentBlock != IntPtr.Zero) Marshal.FreeHGlobal(environmentBlock);
+            }
             CloseHandle(target.Thread);
             WaitForSingleObject(target.Process, 0xffffffff);
             uint exitCode;
@@ -129,4 +140,8 @@ public static class ReproPackJob {
 '@
 
 $spec = Get-Content -LiteralPath $Specification -Raw -Encoding UTF8 | ConvertFrom-Json
-[ReproPackJob]::Run([string]$spec.executable, [string[]]$spec.arguments, [string]$spec.cwd, [string]$spec.statusPath, [int]$spec.parentPid)
+$environmentEntries = $null
+if ($null -ne $spec.environment) {
+    $environmentEntries = @($spec.environment.PSObject.Properties | ForEach-Object { $_.Name + '=' + [string]$_.Value })
+}
+[ReproPackJob]::Run([string]$spec.executable, [string[]]$spec.arguments, [string]$spec.cwd, [string]$spec.statusPath, [int]$spec.parentPid, [string[]]$environmentEntries)

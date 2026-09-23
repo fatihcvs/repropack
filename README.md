@@ -112,6 +112,12 @@ On Windows, each phase runs under `src/windows-job.ps1`, which creates a
 Job Object before starting the target. Ordinary descendants, including detached
 children, are terminated when the target finishes or the supervisor is stopped.
 The supervisor uses Windows PowerShell/.NET and runtime C# compilation. Startup
+uses the trusted helper's host environment; the reviewed target receives a
+separate, explicit Unicode environment block containing only the runner's
+filtered variables. It does not inherit the helper's credentials or other
+arbitrary variables. This avoids PowerShell initialization stalls caused by
+starting PowerShell itself inside the empty target profile.
+Startup
 has a separate 20-second bound; the recipe timeout starts when the supervisor
 is ready. A status record distinguishes target exit codes (including 125) from
 supervisor launch failures. Startup adds several seconds per phase.

@@ -7,11 +7,11 @@ import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const windows = process.platform === 'win32';
-async function launch(t, code, args = [], parentPid = 0) {
+async function launch(t, code, args = [], parentPid = 0, environment) {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'repropack-job-'));
   t.after(() => fs.rm(directory, { recursive: true, force: true }));
   const specification = path.join(directory, 'specification.json');
-  await fs.writeFile(specification, JSON.stringify({ executable: process.execPath, arguments: ['-e', code, ...args], cwd: directory, parentPid }));
+  await fs.writeFile(specification, JSON.stringify({ executable: process.execPath, arguments: ['-e', code, ...args], cwd: directory, parentPid, environment }));
   const helper = fileURLToPath(new URL('../src/windows-job.ps1', import.meta.url));
   const child = spawn(path.join(process.env.SystemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe'),
     ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', helper, '-Specification', specification],
@@ -35,6 +35,16 @@ test('Windows job preserves exit code and exact arguments without shell evaluati
   const result = await closed;
   assert.equal(result.code, 7, result.stderr);
   assert.deepEqual(JSON.parse(result.stdout), args);
+});
+
+test('Windows job replaces the helper environment and preserves Unicode values', { skip: !windows }, async t => {
+  process.env.REPROPACK_HELPER_PRIVATE = 'do-not-inherit';
+  t.after(() => delete process.env.REPROPACK_HELPER_PRIVATE);
+  const environment = { SystemRoot: process.env.SystemRoot, REPROPACK_VALUE: 'Türkçe = 日本語', REPROPACK_EMPTY: '' };
+  const { closed } = await launch(t, 'console.log(JSON.stringify({secret:process.env.REPROPACK_HELPER_PRIVATE ?? null,value:process.env.REPROPACK_VALUE,empty:process.env.REPROPACK_EMPTY}))', [], 0, environment);
+  const result = await closed;
+  assert.equal(result.code, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), { secret: null, value: environment.REPROPACK_VALUE, empty: '' });
 });
 
 test('Windows job cleans detached descendants when target exits early', { skip: !windows }, async t => {

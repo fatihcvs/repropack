@@ -53,7 +53,7 @@ export async function runCommand(command, { cwd, env, timeoutMs, signal, maxOutp
   if (process.platform === 'win32') {
     supervision = await fs.mkdtemp(path.join(env?.TEMP || os.tmpdir(), 'repropack-supervisor-'));
     const specification = path.join(supervision, 'spec.json');
-    await fs.writeFile(specification, JSON.stringify({ executable: resolved[0], arguments: resolved.slice(1), cwd, statusPath: path.join(supervision, 'status.json'), parentPid: process.pid }));
+    await fs.writeFile(specification, JSON.stringify({ executable: resolved[0], arguments: resolved.slice(1), cwd, environment: env, statusPath: path.join(supervision, 'status.json'), parentPid: process.pid }));
     invocation = [path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe'),
       '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', fileURLToPath(new URL('./windows-job.ps1', import.meta.url)), '-Specification', specification];
   } else if (process.platform === 'linux') {
@@ -65,7 +65,9 @@ export async function runCommand(command, { cwd, env, timeoutMs, signal, maxOutp
   }
   try {
   return await new Promise((resolve, reject) => {
-    const child = spawn(invocation[0], invocation.slice(1), { cwd, env, shell: false, windowsHide: true,
+    // PowerShell/.NET needs its host environment to initialize reliably. The
+    // trusted helper passes the isolated environment explicitly to CreateProcess.
+    const child = spawn(invocation[0], invocation.slice(1), { cwd, env: process.platform === 'win32' ? process.env : env, shell: false, windowsHide: true,
       detached: process.platform !== 'win32', stdio: [process.platform === 'linux' ? 'pipe' : 'ignore', 'pipe', 'pipe'] });
     if (process.platform === 'linux') {
       child.stdin.on('error', () => { /* Launch failure is reported by error/close below. */ });
