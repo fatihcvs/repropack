@@ -63,7 +63,7 @@ of the selected inventory and are not covered by this command.
 ## Development status
 
 - Implemented: explicit capture, portable path checks, digests, limits, manifest, integrity verification and two-run local execution.
-- Pending: stronger process containment, reports, skill,
+- Pending: stronger process containment, skill,
   comparative evaluations, CI and first release.
 
 This project is separate from Backup Coverage.
@@ -106,3 +106,27 @@ already-exited parent are not reliably contained in this preview. Do not use
 daemonizing recipes. Stronger lifecycle containment is a remaining release gate.
 Temporary files are removed on normal completion/error/cancellation; forcefully
 killing ReproPack itself can leave files. Only Windows execution has been tested.
+
+## Shareable report
+
+Save the execution JSON, then render it as Markdown:
+
+```sh
+node src/cli.js run ../bug-package --allow-execution > result.json
+node src/cli.js report result.json --mask-path "C:\Users\Example" > report.md
+```
+
+Use a UTF-8 result file (older Windows PowerShell redirection may use UTF-16;
+use PowerShell 7 or save stdout as UTF-8). `report` accepts repeated `--mask-path`
+options. Each replaces the exact supplied string and its forward-slash variant
+in report text, including arguments and process output. It does not change the
+saved evidence or package and does not detect arbitrary secrets or path variants.
+
+Reports include the expected failure/command, actual phase outcomes, runtime
+version/platform, selected file hashes and available source commit, with separate
+stdout/stderr for each attempt. Fenced output remains literal Markdown even when
+the application prints backticks or headings. Review all content before sharing.
+Rendering does not execute a package, authenticate evidence or upload anything.
+Failed/unsupported runs retain their recipe and environment too; unexecuted
+phases are identified. A claimed `reproduced` result is rejected if the recorded
+attempts do not contain two matching failures with successful setup.

@@ -91,13 +91,18 @@ export async function reproduce(directory, { allowExecution = false, signal, tem
   const { manifest, files } = await verifyPackage(directory);
   const { recipe } = manifest;
   const attempts = [];
+  const finish = (status, extra = {}) => ({
+    schemaVersion: 1, status, scope: 'local machine; up to two clean-directory attempts',
+    environment: { node: process.version, platform: process.platform, arch: process.arch, osRelease: os.release() },
+    source: manifest.source, files: manifest.files, recipe, attempts, ...extra,
+  });
   // Resolve both commands before executing either one.
   try {
     await resolveCommand(recipe.command);
     if (recipe.setup) await resolveCommand(recipe.setup);
-  } catch (error) { return { status: 'unsupported', reason: error.message, attempts }; }
+  } catch (error) { return finish('unsupported', { reason: error.message }); }
   for (let index = 0; index < 2; index++) {
-    if (signal?.aborted) return { status: 'cancelled', attempts };
+    if (signal?.aborted) return finish('cancelled');
     const work = await fs.mkdtemp(path.join(await fs.realpath(temporaryRoot), 'repropack-run-'));
     try {
       const project = path.join(work, 'project');
@@ -114,20 +119,19 @@ export async function reproduce(directory, { allowExecution = false, signal, tem
       if (recipe.setup) {
         attempt.setup = await runCommand(recipe.setup, options);
         if (attempt.setup.status !== 'exited' || attempt.setup.exitCode !== 0) {
-          return { status: attempt.setup.status === 'cancelled' ? 'cancelled' : 'setup_failed', attempts };
+          return finish(attempt.setup.status === 'cancelled' ? 'cancelled' : 'setup_failed');
         }
       }
       attempt.target = await runCommand(recipe.command, options);
       const target = attempt.target;
       attempt.matched = target.status === 'exited' && target.exitCode === recipe.expected.exitCode &&
         (target.stdout.includes(recipe.expected.signature) || target.stderr.includes(recipe.expected.signature));
-      if (target.status !== 'exited') return { status: target.status, attempts };
+      if (target.status !== 'exited') return finish(target.status);
     } finally {
       // work is exclusively created by mkdtemp under the resolved temporary root.
       await fs.rm(work, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
     }
   }
   const matches = attempts.filter(attempt => attempt.matched).length;
-  return { status: matches === 2 ? 'reproduced' : matches === 1 ? 'intermittent' : 'not_reproduced',
-    scope: 'two clean directories on this machine', recipe, attempts };
+  return finish(matches === 2 ? 'reproduced' : matches === 1 ? 'intermittent' : 'not_reproduced');
 }
