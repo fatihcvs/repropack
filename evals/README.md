@@ -185,3 +185,50 @@ manufactured, so `outcome` remains `not_scored`: semantic equivalence, preserved
 setup constraints, intermittent behavior, sanitization disclosure and false
 claims still require independent review. Replaying a hand-authored fixture is
 not evidence of a Claude invocation or a completed comparison trial.
+
+## Summarize evaluator records
+
+Keep a separate version 1 ledger outside trial workspaces. Begin with
+`{"schemaVersion":1,"records":[]}`; absent trials remain **unrun**, with null
+pass rates. Never create completed records for prepared folders or local fixture
+tests. After a real attempt, record its scheduled `key`, `status` (`completed`
+or `infrastructure_failed`), nonnegative integer `elapsedMs` and `interventions`,
+and a nonempty `evidence` list of `{ "path": "...", "sha256": "..." }` entries.
+Preserve raw traces and artifacts separately; do not put secrets in the ledger.
+
+Infrastructure failures need a nonempty `reason` and no review. Completed model
+attempts may have `review: null` while awaiting artifact/semantic evaluation.
+A finished `review` must contain:
+
+- `outcome`: `pass` or `fail`, following the category-specific protocol above.
+- `notes`: a nonempty explanation referencing the supporting evidence and limits.
+- `falseReproduction`, `sourcePreserved`, `missingFiles`: boolean observations.
+- `leakedMarkers`: a nonnegative integer count of known synthetic marker leaks.
+
+These are evaluator observations, not fields automatically inferred from a
+candidate's claim or the replay tool's exit code. A pass cannot coexist with a
+false reproduction, changed original, missing required file or marker leak.
+Keep failed infrastructure attempts and their traces in the audit history if a
+trial is retried; the summary ledger contains one current record per scheduled
+trial and rejects duplicate keys. Do not erase failed skill outcomes by retrying
+outside the frozen protocol.
+
+```sh
+node evals/summarize.js /comparison/plan.json /outside-trials/ledger.json > /outside-trials/summary.json
+```
+
+The summary separates each arm and category. `reportedPassRate` divides passing
+reviews by **reviewed** trials, while `reviewCoverage` divides reviewed trials by
+planned trials. Unrun, infrastructure-failed and awaiting-review counts remain
+visible. Audit counts use reviewed trials; elapsed time/interventions sum completed
+attempts only. There is deliberately no combined pass rate mixing unsupported
+boundary handling with executable reproductions.
+
+Exit 1 means the ledger is incomplete, exit 0 means all 108 reviews are recorded,
+and exit 2 means malformed/inconsistent input. Neither exit 0 nor a reported pass
+rate verifies model execution, file existence/hashes, semantic correctness or
+equal protocol conditions. The tool checks evidence-reference syntax only and
+always reports `evidenceVerified: false` and `releaseDecision: not_assessed`.
+`protocolRecorded` only describes presence of the plan's protocol fields; it does
+not approve their contents. Validate those controls and the actual evidence
+independently before publishing comparison claims or releasing the skill.
