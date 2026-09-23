@@ -107,6 +107,16 @@ daemonizing recipes. Stronger lifecycle containment is a remaining release gate.
 Temporary files are removed on normal completion/error/cancellation; forcefully
 killing ReproPack itself can leave files. Only Windows execution has been tested.
 
+An experimental Windows Job Object supervisor is in `src/windows-job.ps1`.
+Its standalone tests cover exact argument/exit-code propagation, early parent
+exit with a detached child, and forced supervisor termination. It follows the
+[Windows Job Object lifecycle](https://learn.microsoft.com/en-us/windows/win32/procthread/job-objects)
+and joins the job before launching the target. It is **not yet connected to
+`run`**: startup/target timing, launch-error reporting and CLI integration remain
+required before the existing process-cleanup limitation can be removed.
+The supervisor uses Windows PowerShell/.NET and runtime C# compilation; it does
+not provide a security boundary against hostile code or out-of-job brokers.
+
 ## Shareable report
 
 Save the execution JSON, then render it as Markdown:
