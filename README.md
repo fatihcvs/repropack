@@ -72,6 +72,8 @@ This project is separate from Backup Coverage.
 Try the draft [Claude Code skill](docs/skill-installation.md) to prepare and
 reduce a Node/npm reproduction using the CLI. Its instructions and references
 are in `skills/reproduce-bug/`; `fixtures/assertion/` provides an offline example.
+The [evaluation corpus and protocol](evals/README.md) define twelve synthetic
+tasks for the pending skill comparison. Dataset checks are not model evaluations.
 
 ## Local execution (development preview)
 
