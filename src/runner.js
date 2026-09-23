@@ -53,7 +53,7 @@ export async function runCommand(command, { cwd, env, timeoutMs, signal, maxOutp
   if (process.platform === 'win32') {
     supervision = await fs.mkdtemp(path.join(env?.TEMP || os.tmpdir(), 'repropack-supervisor-'));
     const specification = path.join(supervision, 'spec.json');
-    await fs.writeFile(specification, JSON.stringify({ executable: resolved[0], arguments: resolved.slice(1), cwd, statusPath: path.join(supervision, 'status.json') }));
+    await fs.writeFile(specification, JSON.stringify({ executable: resolved[0], arguments: resolved.slice(1), cwd, statusPath: path.join(supervision, 'status.json'), parentPid: process.pid }));
     invocation = [path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe'),
       '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', fileURLToPath(new URL('./windows-job.ps1', import.meta.url)), '-Specification', specification];
   }

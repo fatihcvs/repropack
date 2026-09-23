@@ -69,7 +69,11 @@ public static class ReproPackJob {
         return output.Append('"').ToString();
     }
 
-    public static void Run(string executable, string[] arguments, string directory, string statusPath) {
+    public static void Run(string executable, string[] arguments, string directory, string statusPath, int parentPid) {
+        // Retain a process handle before launching the target. Monitoring this
+        // handle avoids confusing a later reused PID with the original parent.
+        Process parent = parentPid > 0 ? Process.GetProcessById(parentPid) : null;
+        if (parent != null) { IntPtr parentHandle = parent.Handle; }
         IntPtr job = CreateJobObject(IntPtr.Zero, null);
         if (job == IntPtr.Zero) throw new System.ComponentModel.Win32Exception();
         var limits = new ExtendedLimits();
@@ -81,6 +85,14 @@ public static class ReproPackJob {
         if (!AssignProcessToJobObject(job, Process.GetCurrentProcess().Handle)) {
             int error = Marshal.GetLastWin32Error(); CloseHandle(job);
             throw new System.ComponentModel.Win32Exception(error);
+        }
+        if (parent != null) {
+            var watchdog = new System.Threading.Thread(() => {
+                try { parent.WaitForExit(); }
+                finally { Environment.Exit(125); }
+            });
+            watchdog.IsBackground = true;
+            watchdog.Start();
         }
         // Do not close the handle explicitly: this supervisor is also in the job.
         // Environment.Exit preserves the target status while process teardown
@@ -117,4 +129,4 @@ public static class ReproPackJob {
 '@
 
 $spec = Get-Content -LiteralPath $Specification -Raw -Encoding UTF8 | ConvertFrom-Json
-[ReproPackJob]::Run([string]$spec.executable, [string[]]$spec.arguments, [string]$spec.cwd, [string]$spec.statusPath)
+[ReproPackJob]::Run([string]$spec.executable, [string[]]$spec.arguments, [string]$spec.cwd, [string]$spec.statusPath, [int]$spec.parentPid)

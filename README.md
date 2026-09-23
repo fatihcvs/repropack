@@ -110,9 +110,9 @@ supervisor launch failures. Startup adds several seconds per phase.
 
 On POSIX, timeout/cancellation currently uses a process group; detached processes
 are not yet reliably contained there. Neither implementation is a security
-sandbox or protection against out-of-job brokers. The parent ReproPack process
-being forcibly killed still needs an explicit supervisor watchdog; this remains
-a release gate. Temporary files are removed on normal completion and handled
+sandbox or protection against out-of-job brokers. The Windows supervisor holds
+a handle to its owning ReproPack process and exits if that process dies, which
+also closes the job and terminates its descendants. Temporary files are removed on normal completion and handled
 cancellation, but forceful parent termination can leave files. Only Windows
 execution has been tested. See Microsoft's [Job Object lifecycle documentation](https://learn.microsoft.com/en-us/windows/win32/procthread/job-objects).
 
