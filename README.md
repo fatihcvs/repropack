@@ -17,6 +17,7 @@ and the [changelog](CHANGELOG.md).
 node src/cli.js create recipe.json
 node src/cli.js verify ../bug-package
 node src/cli.js run ../bug-package --allow-execution
+npm ci --ignore-scripts
 npm test
 ```
 
@@ -75,6 +76,10 @@ of the selected inventory and are not covered by this command.
 - Pending: skill behavioral validation, comparative evaluations and first release.
 
 This project is separate from Backup Coverage.
+
+The [JSON contracts](docs/json-contracts.md) document the recipe, captured
+manifest and execution-result schemas. Schema validation checks structure;
+`verify` and execution/report checks remain necessary for integrity and matching.
 
 Try the draft [Claude Code skill](docs/skill-installation.md) to prepare and
 reduce a Node/npm reproduction using the CLI. Its instructions and references

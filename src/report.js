@@ -57,6 +57,6 @@ export function renderReport(result, { maskPaths = [] } = {}) {
     'These are local-machine observations, not cross-machine or cross-OS proof. A signature match does not establish root cause.', '',
     'This report renders saved results; it does not execute code or authenticate the evidence. Review every selected file, command and output before sharing. No upload is performed.', '',
     'Path masking replaces only the exact supplied strings and forward-slash variants. It is not a secret scanner; credentials, other paths and encoded variants can remain. The original JSON and package are unchanged.', '',
-    'Execution used ordinary OS permissions, not a sandbox. POSIX detached-process cleanup remains a development-preview limitation; only Windows lifecycle behavior has been tested.', '');
+    'Execution used ordinary OS permissions, not a sandbox. Windows Job Object and Linux PID namespace cleanup have been tested. Other POSIX platforms have no verified detached-process cleanup guarantee.', '');
   return lines.join('\n');
 }

@@ -1,7 +1,8 @@
 # Contributing
 
-Use Node.js 22 or later. There are no npm runtime dependencies. Run `npm test`
-from the checkout root. Linux execution tests require util-linux `unshare` and
+Use Node.js 22 or later. There are no npm runtime dependencies. Run
+`npm ci --ignore-scripts` to install the locked development-only JSON Schema
+validator, then `npm test` from the checkout root. Linux execution tests require util-linux `unshare` and
 user/PID/mount namespace permissions; Windows tests use Windows PowerShell/.NET.
 Platform-specific tests skip on the other OS. Tests use disposable synthetic
 projects; do not point fixtures at personal or production data.

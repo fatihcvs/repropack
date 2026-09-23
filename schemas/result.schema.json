@@ -1,0 +1,215 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/fatihcvs/repropack/raw/main/schemas/result.schema.json",
+  "title": "ReproPack execution result v1",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "status": {
+      "enum": [
+        "reproduced",
+        "not_reproduced",
+        "intermittent",
+        "setup_failed",
+        "timed_out",
+        "cancelled",
+        "output_limit",
+        "spawn_failed",
+        "startup_failed",
+        "unsupported"
+      ]
+    },
+    "scope": {
+      "type": "string",
+      "minLength": 1
+    },
+    "environment": {
+      "$ref": "https://github.com/fatihcvs/repropack/raw/main/schemas/common.schema.json#/$defs/environment"
+    },
+    "source": {
+      "$ref": "https://github.com/fatihcvs/repropack/raw/main/schemas/common.schema.json#/$defs/source"
+    },
+    "recipe": {
+      "$ref": "https://github.com/fatihcvs/repropack/raw/main/schemas/common.schema.json#/$defs/recipe"
+    },
+    "files": {
+      "type": "array",
+      "items": {
+        "$ref": "https://github.com/fatihcvs/repropack/raw/main/schemas/common.schema.json#/$defs/file"
+      },
+      "minItems": 1,
+      "maxItems": 1000
+    },
+    "attempts": {
+      "type": "array",
+      "items": {
+        "$ref": "https://github.com/fatihcvs/repropack/raw/main/schemas/common.schema.json#/$defs/attempt"
+      },
+      "maxItems": 2
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "status",
+    "scope",
+    "environment",
+    "recipe",
+    "files",
+    "attempts"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "enum": [
+              "reproduced",
+              "not_reproduced",
+              "intermittent"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "attempts": {
+            "minItems": 2,
+            "items": {
+              "required": [
+                "target",
+                "matched"
+              ],
+              "properties": {
+                "target": {
+                  "properties": {
+                    "status": {
+                      "const": "exited"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "reproduced"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "attempts": {
+            "items": {
+              "properties": {
+                "matched": {
+                  "const": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "not_reproduced"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "attempts": {
+            "items": {
+              "properties": {
+                "matched": {
+                  "const": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "intermittent"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "attempts": {
+            "contains": {
+              "properties": {
+                "matched": {
+                  "const": true
+                }
+              },
+              "required": [
+                "matched"
+              ]
+            },
+            "minContains": 1,
+            "maxContains": 1
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "unsupported"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "reason"
+        ],
+        "properties": {
+          "attempts": {
+            "maxItems": 0
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "enum": [
+              "setup_failed",
+              "timed_out",
+              "output_limit",
+              "spawn_failed",
+              "startup_failed"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "attempts": {
+            "minItems": 1
+          }
+        }
+      }
+    }
+  ]
+}

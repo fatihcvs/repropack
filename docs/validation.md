@@ -86,3 +86,18 @@ Both attempts matched exit 1 and `TOTAL_IGNORES_QUANTITY`; report rendering pass
 The package included the fixture, CLI, supervisors, skill references and new docs.
 This is a local tarball installation, not public release download verification
 or a real Claude session. No source behavior changed in this documentation slice.
+
+## JSON Schema contracts
+
+The draft 2020-12 schemas compile with locked development dependency Ajv 8.20.0.
+Eight schema/report tests passed on Windows with Node 24.13.0 (18.0 seconds).
+Actual capture, two matching executions, pre-cancellation, unsupported command
+and setup failure outputs passed structural validation. Mutations with missing
+attempts, false match flags, non-exited targets, invalid digests and invalid recipe
+limits were rejected. A structurally valid result with a removed failure signature
+still passed the schema and was rejected by the report's semantic check, explicitly
+demonstrating the boundary between these checks.
+
+CI now installs the locked development dependencies with `npm ci --ignore-scripts`
+before testing. Runtime CLI commands remain dependency-free. This change also
+corrects the report's outdated claim that Linux lifecycle testing was pending.

@@ -14,6 +14,8 @@
   evaluation corpus. Actual Claude behavior and comparative scores remain pending.
 - Hosted Node 22/24 tests on Windows and Ubuntu 22.04 passed at commit `8d6ccb9`.
 - English and Turkish quickstarts, contribution guidelines and security boundaries.
+- Draft 2020-12 JSON schemas for capture recipes, manifests and execution results,
+  checked against actual CLI/core outputs with a development-only validator.
 
 There is no stable release or npm publication yet. Local CLI validation and CI
 do not establish external-user adoption or safety for running hostile packages.

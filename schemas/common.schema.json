@@ -1,0 +1,229 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/fatihcvs/repropack/raw/main/schemas/common.schema.json",
+  "title": "ReproPack shared structures",
+  "$defs": {
+    "recipe": {
+      "type": "object",
+      "properties": {
+        "command": {
+          "type": "array",
+          "minItems": 1,
+          "prefixItems": [
+            {
+              "type": "string",
+              "pattern": "^[^\u0000]*$",
+              "minLength": 1
+            }
+          ],
+          "items": {
+            "type": "string",
+            "pattern": "^[^\u0000]*$"
+          }
+        },
+        "setup": {
+          "type": "array",
+          "minItems": 1,
+          "prefixItems": [
+            {
+              "type": "string",
+              "pattern": "^[^\u0000]*$",
+              "minLength": 1
+            }
+          ],
+          "items": {
+            "type": "string",
+            "pattern": "^[^\u0000]*$"
+          }
+        },
+        "cwd": {
+          "type": "string",
+          "minLength": 1
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 300000
+        },
+        "expected": {
+          "type": "object",
+          "properties": {
+            "exitCode": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 255
+            },
+            "signature": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1000,
+              "pattern": "\\S"
+            }
+          },
+          "required": [
+            "exitCode",
+            "signature"
+          ]
+        }
+      },
+      "required": [
+        "command",
+        "cwd",
+        "timeoutMs",
+        "expected"
+      ]
+    },
+    "file": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "size": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5242880
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "path",
+        "size",
+        "sha256"
+      ]
+    },
+    "phase": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "enum": [
+            "exited",
+            "timed_out",
+            "cancelled",
+            "output_limit",
+            "spawn_failed",
+            "startup_failed"
+          ]
+        },
+        "exitCode": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "signal": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "error": {
+          "type": "string"
+        },
+        "stdout": {
+          "type": "string"
+        },
+        "stderr": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "status",
+        "exitCode",
+        "stdout",
+        "stderr"
+      ]
+    },
+    "attempt": {
+      "type": "object",
+      "properties": {
+        "number": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2
+        },
+        "setup": {
+          "$ref": "https://github.com/fatihcvs/repropack/raw/main/schemas/common.schema.json#/$defs/phase"
+        },
+        "target": {
+          "$ref": "https://github.com/fatihcvs/repropack/raw/main/schemas/common.schema.json#/$defs/phase"
+        },
+        "matched": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "number"
+      ],
+      "anyOf": [
+        {
+          "required": [
+            "setup"
+          ]
+        },
+        {
+          "required": [
+            "target"
+          ]
+        }
+      ],
+      "dependentRequired": {
+        "target": [
+          "matched"
+        ],
+        "matched": [
+          "target"
+        ]
+      }
+    },
+    "environment": {
+      "type": "object",
+      "properties": {
+        "node": {
+          "type": "string",
+          "minLength": 1
+        },
+        "platform": {
+          "type": "string",
+          "minLength": 1
+        },
+        "arch": {
+          "type": "string",
+          "minLength": 1
+        },
+        "osRelease": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "node",
+        "platform",
+        "arch",
+        "osRelease"
+      ]
+    },
+    "source": {
+      "type": "object",
+      "properties": {
+        "commit": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "note": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "commit",
+        "note"
+      ]
+    }
+  }
+}

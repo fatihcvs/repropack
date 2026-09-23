@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/fatihcvs/repropack/raw/main/schemas/manifest.schema.json",
+  "title": "ReproPack captured manifest v1",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "status": {
+      "const": "packaged"
+    },
+    "source": {
+      "$ref": "https://github.com/fatihcvs/repropack/raw/main/schemas/common.schema.json#/$defs/source"
+    },
+    "environment": {
+      "$ref": "https://github.com/fatihcvs/repropack/raw/main/schemas/common.schema.json#/$defs/environment"
+    },
+    "recipe": {
+      "$ref": "https://github.com/fatihcvs/repropack/raw/main/schemas/common.schema.json#/$defs/recipe"
+    },
+    "files": {
+      "type": "array",
+      "items": {
+        "$ref": "https://github.com/fatihcvs/repropack/raw/main/schemas/common.schema.json#/$defs/file"
+      },
+      "minItems": 1,
+      "maxItems": 1000
+    },
+    "lockfiles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        },
+        "required": [
+          "path",
+          "sha256"
+        ]
+      },
+      "maxItems": 1000
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "status",
+    "source",
+    "environment",
+    "recipe",
+    "files",
+    "lockfiles"
+  ]
+}
