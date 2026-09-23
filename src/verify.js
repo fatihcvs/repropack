@@ -30,6 +30,7 @@ export function validateManifest(manifest) {
   const recipe = manifest.recipe;
   if (!object(recipe) || !object(recipe.expected)) throw new Error('Missing execution recipe');
   if (!Array.isArray(recipe.command) || !recipe.command.length || !recipe.command[0] || recipe.command.some(x => typeof x !== 'string' || x.includes('\0'))) throw new Error('Invalid command argument array');
+  if (recipe.setup !== undefined && (!Array.isArray(recipe.setup) || !recipe.setup.length || !recipe.setup[0] || recipe.setup.some(x => typeof x !== 'string' || x.includes('\0')))) throw new Error('Invalid setup argument array');
   if (recipe.cwd !== '.') relativePath(recipe.cwd);
   if (!Number.isInteger(recipe.timeoutMs) || recipe.timeoutMs < 1 || recipe.timeoutMs > 300000) throw new Error('Invalid timeout');
   const { exitCode, signature } = recipe.expected;

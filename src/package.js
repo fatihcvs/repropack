@@ -33,9 +33,10 @@ export async function regularFile(root, parts) {
   return current;
 }
 
-export async function createPackage({ root, output, files, command, signature, exitCode = 1, cwd = '.', timeoutMs = 10000, maxFileBytes = 5 * 1024 * 1024, maxTotalBytes = 20 * 1024 * 1024 }) {
+export async function createPackage({ root, output, files, command, setup, signature, exitCode = 1, cwd = '.', timeoutMs = 10000, maxFileBytes = 5 * 1024 * 1024, maxTotalBytes = 20 * 1024 * 1024 }) {
   if (!Array.isArray(files) || files.length === 0 || files.length > 1000) throw new Error('Select between 1 and 1000 files');
   if (!Array.isArray(command) || !command.length || command.some(x => typeof x !== 'string' || x.includes('\0')) || !command[0]) throw new Error('command must be an argument array');
+  if (setup !== undefined && (!Array.isArray(setup) || !setup.length || !setup[0] || setup.some(x => typeof x !== 'string' || x.includes('\0')))) throw new Error('setup must be an argument array');
   if (typeof signature !== 'string' || !signature.trim() || signature.length > 1000) throw new Error('A nonempty failure signature of at most 1000 characters is required');
   if (!Number.isInteger(exitCode) || exitCode < 1 || exitCode > 255) throw new Error('Expected exit code must be 1..255');
   if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 300000) throw new Error('Timeout must be 1..300000 ms');
@@ -85,7 +86,7 @@ export async function createPackage({ root, output, files, command, signature, e
     schemaVersion: 1, status: 'packaged',
     source: { commit, note: 'Selected working-tree bytes; commit does not imply a clean tree.' },
     environment: { node: process.version, platform: process.platform, arch: process.arch, osRelease: os.release() },
-    recipe: { command, cwd, timeoutMs, expected: { exitCode, signature } },
+    recipe: { command, ...(setup === undefined ? {} : { setup }), cwd, timeoutMs, expected: { exitCode, signature } },
     files: selected.map(({ data, ...entry }) => entry),
     lockfiles: selected.filter(f => /(^|\/)package-lock\.json$/.test(f.path)).map(f => ({ path: f.path, sha256: f.sha256 })),
   };

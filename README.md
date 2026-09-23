@@ -1,14 +1,15 @@
 # ReproPack
 
 Build a reviewable package for a Node.js bug reproduction. Early development:
-file capture and package integrity verification are implemented; execution and the Claude
-Code skill are not yet implemented. A packaged artifact is not a reproduced bug.
+file capture, integrity verification and local repeated execution are implemented.
+The Claude Code skill and release evaluation are pending. A packaged artifact is not a reproduced bug.
 
 Requires Node.js 22 or later. No runtime dependencies.
 
 ```sh
 node src/cli.js create recipe.json
 node src/cli.js verify ../bug-package
+node src/cli.js run ../bug-package --allow-execution
 npm test
 ```
 
@@ -44,8 +45,7 @@ ordinary source files are not automatically detected: inspect every selected
 file before sharing. No uploads or environment-variable collection occur.
 
 The recorded commit is context only; selected files can contain uncommitted
-changes. Separate working directories are not a sandbox. Later execution
-support must clearly distinguish setup failures, timeouts and signature matches.
+changes. Separate working directories are not a sandbox.
 
 `verify` checks the recipe, selected file sizes and SHA-256 digests, lockfile
 inventory, and unexpected files inside `project/`. It rejects links and reads
@@ -62,8 +62,47 @@ of the selected inventory and are not covered by this command.
 
 ## Development status
 
-- Implemented: explicit capture, portable path checks, digests, limits, manifest and package integrity verification.
-- Pending: runner, repeated clean-directory verification, reports, skill,
+- Implemented: explicit capture, portable path checks, digests, limits, manifest, integrity verification and two-run local execution.
+- Pending: stronger process containment, reports, skill,
   comparative evaluations, CI and first release.
 
 This project is separate from Backup Coverage.
+
+## Local execution (development preview)
+
+Review all selected source files and commands before using `run --allow-execution`.
+This executes code with your operating-system permissions; files, network and
+other local resources remain accessible. Only use trusted examples. No sandbox
+or safe execution of hostile packages is provided.
+
+Commands begin with `node` or `npm`, followed by individual arguments. Node uses
+the current runtime; npm uses its CLI script from a standard installation on
+PATH without constructing a shell command. npm scripts may themselves use a
+shell. Optional `setup` is a separate argument array, for example
+`["npm", "ci", "--ignore-scripts", "--no-audit", "--no-fund"]`.
+Dependency installation may access the network; omitting `--ignore-scripts`
+allows package installation scripts. Nothing installs automatically unless
+the recipe includes setup and execution is explicitly enabled.
+
+Each of two attempts gets fresh project and home/cache directories. Arbitrary
+parent environment variables are omitted (including tokens and NODE_OPTIONS);
+OS/PATH/locale essentials are retained. Environment-dependent failures may
+therefore differ from the original project. Each phase has the recipe timeout
+and a combined 1 MiB stdout/stderr limit. Outputs are returned locally as JSON
+and can contain sensitive application data; review before sharing.
+
+`reproduced` requires the exact nonzero exit code and literal signature in
+stdout or stderr in both attempts. Mixed matches are `intermittent`; two misses
+are `not_reproduced`. Setup failure is `setup_failed`, with its own phase details.
+Target timeout, cancellation, output overflow, spawn failure and unsupported
+commands are distinct outcomes. A match proves this failure signature on this
+machine, not its root cause or portability to another OS. CLI exit codes are
+0 for reproduced, 1 for other execution outcomes, and 2 for invalid input or
+operational errors.
+
+Timeout/cancellation stops the attached process tree using taskkill on Windows
+or a process group on POSIX. Detached descendants or children that outlive an
+already-exited parent are not reliably contained in this preview. Do not use
+daemonizing recipes. Stronger lifecycle containment is a remaining release gate.
+Temporary files are removed on normal completion/error/cancellation; forcefully
+killing ReproPack itself can leave files. Only Windows execution has been tested.
