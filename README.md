@@ -2,7 +2,8 @@
 
 Build a reviewable package for a Node.js bug reproduction. Early development:
 file capture, integrity verification and local repeated execution are implemented.
-The Claude Code skill and release evaluation are pending. A packaged artifact is not a reproduced bug.
+A draft Claude Code skill is included; behavioral validation and release evaluation
+are pending. A packaged artifact is not a reproduced bug.
 
 Requires Node.js 22 or later. No runtime dependencies.
 
@@ -63,10 +64,14 @@ of the selected inventory and are not covered by this command.
 ## Development status
 
 - Implemented: explicit capture, portable path checks, digests, limits, manifest, integrity verification and two-run local execution.
-- Pending: stronger process containment, skill,
+- Pending: stronger process containment, skill behavioral validation,
   comparative evaluations, CI and first release.
 
 This project is separate from Backup Coverage.
+
+Try the draft [Claude Code skill](docs/skill-installation.md) to prepare and
+reduce a Node/npm reproduction using the CLI. Its instructions and references
+are in `skills/reproduce-bug/`; `fixtures/assertion/` provides an offline example.
 
 ## Local execution (development preview)
 
